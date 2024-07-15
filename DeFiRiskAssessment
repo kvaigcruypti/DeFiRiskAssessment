@@ -1,0 +1,67 @@
+// DeFiRiskAssessment.js
+
+const axios = require('axios');
+require('dotenv').config();
+
+class DeFiRiskAssessment {
+    constructor() {
+        this.apiKey = process.env.DEFI_API_KEY;
+        this.apiUrl = 'https://api.defi.com/v1'; // Replace with actual DeFi API URL
+    }
+
+    async fetchProtocolData(protocol) {
+        try {
+            const response = await axios.get(`${this.apiUrl}/protocol/${protocol}`, {
+                headers: { 'Authorization': `Bearer ${this.apiKey}` }
+            });
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching data for ${protocol}:`, error.message);
+            return null;
+        }
+    }
+
+    async assessRisk(protocol) {
+        const data = await this.fetchProtocolData(protocol);
+
+        if (!data) {
+            console.log(`No data available for ${protocol}.`);
+            return null;
+        }
+
+        const { tvl, audits, incidents } = data;
+
+        let riskScore = 0;
+        const maxRiskScore = 100;
+
+        // Example risk assessment criteria
+        if (tvl < 1000000) {
+            riskScore += 30;
+        } else if (tvl < 10000000) {
+            riskScore += 20;
+        } else {
+            riskScore += 10;
+        }
+
+        if (audits.length === 0) {
+            riskScore += 50;
+        } else if (audits.length < 2) {
+            riskScore += 20;
+        } else {
+            riskScore += 10;
+        }
+
+        if (incidents.length > 0) {
+            riskScore += 50;
+        } else {
+            riskScore += 10;
+        }
+
+        const riskPercentage = (riskScore / maxRiskScore) * 100;
+        console.log(`Risk assessment for ${protocol}: ${riskPercentage.toFixed(2)}%`);
+
+        return riskPercentage;
+    }
+}
+
+module.exports = DeFiRiskAssessment;
